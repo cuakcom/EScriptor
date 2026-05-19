@@ -6,6 +6,7 @@ import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptMa
 import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
 import { AutoSaveManager } from "./autosave.js";
+import { updateSceneNumbers } from "./sceneManager.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -184,6 +185,7 @@ function detectAndRegisterBlock(block) {
   if (style === "scene-heading") {
     const sceneTitle = detectSceneTitle(text);
     if (sceneTitle) scriptManager.addScene(sceneTitle);
+    updateSceneNumbers();
   } else if (style === "character") {
     const charName = detectCharacterName(text);
     if (charName) scriptManager.addCharacter(charName);
@@ -236,6 +238,7 @@ editor.addEventListener("input", () => {
   editor.querySelectorAll(".script-block").forEach(updatePlaceholderState);
   updateAlert();
   updateStats();
+  updateSceneNumbers();
   const c = getCurrentBlock();
   if (c) styleSelector.value = c.dataset.style;
 });
