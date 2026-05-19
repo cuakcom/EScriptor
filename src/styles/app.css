@@ -171,7 +171,15 @@ button:hover, select:hover {
 .style-action { text-align: left; }
 .style-character { text-transform: uppercase; margin-left: 3.5cm; text-align: center; width: 3cm; }
 .style-dialogue { margin-left: 2.5cm; margin-right: 2.5cm; }
-.style-parenthetical { margin-left: 8cm; }
+.style-parenthetical {
+  margin-left: 8cm;
+}
+.style-parenthetical::before {
+  content: "(";
+}
+.style-parenthetical::after {
+  content: ")";
+}
 .style-transition { text-transform: uppercase; text-align: right; }
 .style-shot { text-transform: uppercase; }
 .style-text { text-align: left; }
