@@ -7,6 +7,7 @@ import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
 import { AutoSaveManager } from "./autosave.js";
 import { updateSceneNumbers } from "./sceneManager.js";
+import { exportToDOCX, exportToFDX, importFromFDX, importFromDOCX } from "./documentExport.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -341,7 +342,20 @@ document.getElementById("fileInput").addEventListener("change", async (e) => {
   if (!file) return;
 
   try {
-    const data = await loadFromLocalFile(file);
+    let data;
+
+    if (file.name.endsWith('.fdx')) {
+      data = await importFromFDX(file);
+      data.content = `<div class="script-block" data-style="text">${escapeHtml(data.editorText)}</div>`;
+    } else if (file.name.endsWith('.docx')) {
+      data = await importFromDOCX(file);
+      data.content = `<div class="script-block" data-style="text">${escapeHtml(data.editorText)}</div>`;
+    } else if (file.name.endsWith('.html')) {
+      data = await loadFromLocalFile(file);
+    } else {
+      data = await loadFromLocalFile(file);
+    }
+
     document.getElementById("coverTitle").value = data.title;
     document.getElementById("coverAuthor").value = data.author;
     document.getElementById("editor").innerHTML = data.content;
@@ -351,6 +365,12 @@ document.getElementById("fileInput").addEventListener("change", async (e) => {
     alert("Error al cargar el archivo: " + error.message);
   }
 });
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
 
 document.getElementById("closeSaveFormatModal").addEventListener("click", () => {
   document.getElementById("saveFormatModal").style.display = "none";
@@ -379,24 +399,36 @@ document.querySelector(".export-wrap button").addEventListener("click", (e) => {
   menu.style.display = menu.style.display === "none" ? "block" : "none";
 });
 
-document.querySelectorAll(".export-menu button").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const format = btn.getAttribute("data-format");
-    const title = document.getElementById("coverTitle")?.value || "guion";
+document.getElementById("exportTxt")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  exportToText();
+  document.querySelector(".export-menu").style.display = "none";
+});
 
-    if (format === "txt") {
-      exportToText();
-    } else if (format === "pdf") {
-      exportToPDF();
-    } else if (format === "docx") {
-      alert("Exportación a DOCX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
-    } else if (format === "fdx") {
-      alert("Exportación a FDX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
-    }
+document.getElementById("exportDOCX")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  try {
+    exportToDOCX();
+  } catch (error) {
+    alert("Error al exportar DOCX: " + error.message);
+  }
+  document.querySelector(".export-menu").style.display = "none";
+});
 
-    document.querySelector(".export-menu").style.display = "none";
-  });
+document.getElementById("exportFDX")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  try {
+    exportToFDX();
+  } catch (error) {
+    alert("Error al exportar FDX: " + error.message);
+  }
+  document.querySelector(".export-menu").style.display = "none";
+});
+
+document.getElementById("exportPDF")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  exportToPDF();
+  document.querySelector(".export-menu").style.display = "none";
 });
 
 function loadScriptData(data) {

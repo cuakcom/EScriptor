@@ -20,10 +20,10 @@ export function renderNavbar() {
         <div class="export-wrap">
           <button type="button">Exportar ▾</button>
           <div class="export-menu">
-            <button type="button" data-format="txt">Texto (.txt)</button>
-            <button type="button" data-format="docx">Word (.docx)</button>
-            <button type="button" data-format="fdx">Final Draft (.fdx)</button>
-            <button type="button" data-format="pdf">PDF</button>
+            <button type="button" id="exportTxt" data-format="txt">Texto (.txt)</button>
+            <button type="button" id="exportDOCX" data-format="docx">Word (.docx)</button>
+            <button type="button" id="exportFDX" data-format="fdx">Final Draft (.fdx)</button>
+            <button type="button" id="exportPDF" data-format="pdf">PDF</button>
           </div>
         </div>
       </div>
