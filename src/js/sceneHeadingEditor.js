@@ -1,32 +1,36 @@
 export function handleSceneHeadingInput(event, block) {
-  const text = block.innerText;
-  const lastChar = text[text.length - 1];
+  const inputChar = event.data;
+  if (!inputChar) return;
 
   let replacement = null;
-  let posOffset = 0;
 
-  if (lastChar === 'I') {
+  if (inputChar === 'I') {
     replacement = 'INT.';
-    posOffset = 4;
-  } else if (lastChar === 'E') {
+  } else if (inputChar === 'E') {
     replacement = 'EXT.';
-    posOffset = 4;
-  } else if (lastChar === 'D') {
+  } else if (inputChar === 'D') {
     replacement = 'DÍA';
-    posOffset = 3;
-  } else if (lastChar === 'N') {
+  } else if (inputChar === 'N') {
     replacement = 'NOCHE';
-    posOffset = 5;
   }
 
   if (replacement) {
-    const before = text.slice(0, -1);
-    const newText = before + replacement;
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
+    const text = block.textContent;
+    if (text.endsWith(inputChar)) {
+      const before = text.slice(0, -1);
+      const newText = before + replacement;
 
-    block.innerText = newText;
-    setCaretPosition(block, before.length + posOffset);
+      block.textContent = newText;
+
+      const sel = window.getSelection();
+      const range = document.createRange();
+      if (block.firstChild) {
+        range.setStart(block.firstChild, newText.length);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
   }
 }
 
