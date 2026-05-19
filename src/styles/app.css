@@ -148,11 +148,13 @@ button:hover, select:hover {
 .page { width: min(100%, calc(var(--paper-width) + 3rem)); padding: 1.5rem; display: flex; justify-content: center; }
 .sheet {
   width: var(--paper-width);
-  min-height: var(--paper-min-height);
+  height: var(--paper-min-height);
   background: var(--paper);
   box-shadow: 0 2px 20px rgba(0,0,0,0.12);
   padding: 2.5cm 2cm;
   position: relative;
+  overflow: hidden;
+  page-break-after: always;
 }
 .page-number { position: absolute; top: 1cm; right: 1.4cm; font-size: 11pt; }
 .cover-page { display: flex; align-items: flex-start; justify-content: center; }
