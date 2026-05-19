@@ -139,17 +139,46 @@ button:hover, select:hover {
   position: relative;
 }
 .page-number { position: absolute; top: 1cm; right: 1.4cm; font-size: 11pt; }
-.cover-fields { margin-top: 7cm; display: grid; gap: 2rem; justify-items: center; }
-.cover-fields input {
-  width: 60%;
-  min-width: 12rem;
+.cover-page { display: flex; align-items: flex-start; justify-content: center; }
+.cover-content { margin-top: 5cm; width: 100%; max-width: 12cm; }
+.cover-title-section { margin-bottom: 3cm; }
+.cover-title {
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: underline;
+  font-weight: bold;
+  min-height: 1.5cm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14pt;
+}
+.cover-title-label { display: none; }
+.cover-input-hidden { display: none; }
+.cover-spacing { height: 1.5cm; }
+.cover-author-section { margin-bottom: 2cm; }
+.cover-author-label {
+  font-weight: bold;
+  margin-bottom: 0.3cm;
+}
+.cover-version-section { margin-bottom: 1.5cm; }
+.cover-version-label {
+  font-weight: bold;
+  margin-bottom: 0.3cm;
+}
+.cover-date-section { margin-bottom: 1.5cm; }
+.cover-date-label {
+  font-weight: bold;
+  margin-bottom: 0.3cm;
+}
+.cover-input {
+  width: 100%;
   border: none;
   border-bottom: 1px solid #444;
-  text-align: center;
   font-family: var(--font-main);
   font-size: 12pt;
   outline: none;
-  padding: 0.4rem;
+  padding: 0.3rem 0;
 }
 .editor { min-height: 23cm; outline: none; }
 .script-block {

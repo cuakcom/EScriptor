@@ -158,7 +158,7 @@ function updatePageNumbers(totalPages) {
     const sheet = pages[i].querySelector(".sheet");
     const pageNum = sheet?.querySelector(".page-number");
     if (pageNum && i > 0) {
-      pageNum.textContent = `Pág. ${i + 1}`;
+      pageNum.textContent = `${i + 1}.`;
     }
   }
 
@@ -168,7 +168,7 @@ function updatePageNumbers(totalPages) {
     newPage.className = "page";
     newPage.innerHTML = `
       <article class="sheet">
-        <div class="page-number">Pág. ${pages.length + 1}</div>
+        <div class="page-number">${pages.length + 1}.</div>
         <div class="editor-content"></div>
       </article>
     `;
@@ -250,6 +250,11 @@ styleSelector.value = "scene-heading";
 placeCaretAtEnd(firstBlock);
 updateAlert();
 updateStats();
+
+document.getElementById("coverTitle").addEventListener("input", () => {
+  const title = document.getElementById("coverTitle").value.toUpperCase();
+  document.getElementById("coverTitleDisplay").textContent = title || "";
+});
 
 document.getElementById("saveBtnMain").addEventListener("click", (e) => {
   e.stopPropagation();

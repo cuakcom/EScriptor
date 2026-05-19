@@ -38,8 +38,11 @@ export class ScriptManager {
 }
 
 export function detectSceneTitle(text) {
-  const match = text.match(/^(INT|EXT)\.?\s*[-–]\s*(.+)$/i);
-  return match ? match[0].toUpperCase() : null;
+  const trimmed = text.trim().toUpperCase();
+  if (trimmed && trimmed.length > 0 && trimmed.length < 500) {
+    return trimmed;
+  }
+  return null;
 }
 
 export function detectCharacterName(text) {
