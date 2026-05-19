@@ -3,7 +3,8 @@ import { renderCenter } from "../components/center.js";
 import { renderFooter } from "../components/footer.js";
 import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
-import { saveScriptLocally, exportToText } from "./storage.js";
+import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
+import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -210,7 +211,13 @@ editor.addEventListener("keydown", (e) => {
 
   if (e.key === "Enter") {
     e.preventDefault();
-    detectAndRegisterBlock(b);
+    const currentText = b.textContent.trim();
+    if (currentText.length === 0) {
+      b.innerHTML = "";
+      updatePlaceholderState(b);
+    } else {
+      detectAndRegisterBlock(b);
+    }
     sanitizeBlockLines(b);
     const n = ENTER_MAP[b.dataset.style] || "text";
     const nb = createBlock(n);
@@ -244,40 +251,130 @@ placeCaretAtEnd(firstBlock);
 updateAlert();
 updateStats();
 
+document.getElementById("saveBtnMain").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const menu = document.getElementById("saveMenu");
+  menu.style.display = menu.style.display === "none" ? "block" : "none";
+});
+
+document.getElementById("saveLocalBtn").addEventListener("click", () => {
+  document.getElementById("saveFormatModal").style.display = "flex";
+  document.getElementById("saveMenu").style.display = "none";
+});
+
+document.getElementById("saveAsBtn").addEventListener("click", () => {
+  const filename = prompt("Nombre del archivo:");
+  if (filename) {
+    const title = document.getElementById("coverTitle")?.value || "guion";
+    const author = document.getElementById("coverAuthor")?.value || "";
+    const content = document.getElementById("editor")?.innerHTML || "";
+    const editorText = document.getElementById("editor")?.innerText || "";
+    saveToLocalStorage(filename, { title, author, content, editorText, timestamp: new Date().toISOString() });
+    alert(`Guardado en memoria como "${filename}"`);
+  }
+  document.getElementById("saveMenu").style.display = "none";
+});
+
+document.getElementById("loadBtn").addEventListener("click", () => {
+  const modal = document.getElementById("loadModal");
+  const loadList = document.getElementById("loadList");
+  loadList.innerHTML = "";
+
+  const files = getRecentFiles();
+  if (files.length === 0) {
+    loadList.innerHTML = '<p style="color: #999;">No hay guiones guardados en la memoria.</p>';
+  } else {
+    files.forEach(file => {
+      const item = document.createElement("div");
+      item.className = "load-item";
+      const date = new Date(file.timestamp).toLocaleString('es-ES');
+      item.innerHTML = `
+        <div class="load-item-info">
+          <div class="load-item-name">${file.title || file.name}</div>
+          <div class="load-item-date">${date}</div>
+        </div>
+        <button class="load-item-btn">Cargar</button>
+      `;
+      item.querySelector(".load-item-btn").addEventListener("click", () => {
+        loadScriptData(file.data);
+        modal.style.display = "none";
+      });
+      loadList.append(item);
+    });
+  }
+
+  modal.style.display = "flex";
+});
+
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const data = await loadFromLocalFile(file);
+    document.getElementById("coverTitle").value = data.title;
+    document.getElementById("coverAuthor").value = data.author;
+    document.getElementById("editor").innerHTML = data.content;
+    document.getElementById("loadModal").style.display = "none";
+    alert("Archivo cargado correctamente");
+  } catch (error) {
+    alert("Error al cargar el archivo: " + error.message);
+  }
+});
+
+document.getElementById("closeSaveFormatModal").addEventListener("click", () => {
+  document.getElementById("saveFormatModal").style.display = "none";
+});
+
+document.getElementById("closeLoadModal").addEventListener("click", () => {
+  document.getElementById("loadModal").style.display = "none";
+});
+
+document.getElementById("cancelSaveBtn").addEventListener("click", () => {
+  document.getElementById("saveFormatModal").style.display = "none";
+});
+
+document.getElementById("confirmSaveBtn").addEventListener("click", () => {
+  const filename = document.getElementById("saveFileName").value || "guion";
+  const format = document.getElementById("saveFormat").value;
+  saveToLocalFile(format);
+  document.getElementById("saveFormatModal").style.display = "none";
+  document.getElementById("saveFileName").value = "";
+  alert("Archivo guardado");
+});
+
 document.querySelector(".export-wrap button").addEventListener("click", (e) => {
   e.stopPropagation();
   const menu = document.querySelector(".export-menu");
   menu.style.display = menu.style.display === "none" ? "block" : "none";
 });
 
-document.querySelector(".export-menu").addEventListener("click", (e) => {
-  if (e.target.tagName === "BUTTON") {
-    const text = e.target.textContent;
-    if (text.includes(".txt")) {
+document.querySelectorAll(".export-menu button").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const format = btn.getAttribute("data-format");
+    const title = document.getElementById("coverTitle")?.value || "guion";
+
+    if (format === "txt") {
       exportToText();
-      alert("Archivo exportado como texto");
-    } else if (text.includes(".docx")) {
-      alert("Exportación a Word aún no implementada");
-    } else if (text.includes(".fdx")) {
-      alert("Exportación a Final Draft aún no implementada");
+    } else if (format === "pdf") {
+      exportToPDF();
+    } else if (format === "docx") {
+      alert("Exportación a DOCX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
+    } else if (format === "fdx") {
+      alert("Exportación a FDX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
     }
-  }
+
+    document.querySelector(".export-menu").style.display = "none";
+  });
 });
 
-document.querySelectorAll(".menu-left button").forEach(btn => {
-  if (btn.textContent === "Guardar") {
-    btn.addEventListener("click", async () => {
-      const title = document.getElementById("coverTitle")?.value || "guion";
-      const success = await saveScriptLocally(title);
-      alert(success ? `Guion "${title}" guardado correctamente` : "Error al guardar");
-    });
-  } else if (btn.textContent === "Guardar como") {
-    btn.addEventListener("click", async () => {
-      const filename = prompt("Nombre del archivo:");
-      if (filename) {
-        const success = await saveScriptLocally(filename);
-        alert(success ? `Guardado como "${filename}"` : "Error al guardar");
-      }
-    });
-  }
-});
+function loadScriptData(data) {
+  document.getElementById("coverTitle").value = data.title;
+  document.getElementById("coverAuthor").value = data.author;
+  document.getElementById("editor").innerHTML = data.content;
+  document.getElementById("editor").querySelectorAll(".script-block").forEach(block => {
+    updatePlaceholderState(block);
+  });
+  updateStats();
+}

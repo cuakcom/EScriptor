@@ -110,3 +110,35 @@ export function exportToText() {
   const blob = new Blob([header + text], { type: "text/plain" });
   downloadBlob(blob, `${metadata.title || "guion"}.txt`);
 }
+
+export function exportToPDF() {
+  const text = document.getElementById("editor")?.innerText || "";
+  const metadata = getScriptMetadata();
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Courier, monospace; margin: 2cm; white-space: pre-wrap; }
+    h1 { text-align: center; }
+    .metadata { text-align: center; margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="metadata">
+    <h1>${metadata.title}</h1>
+    <p>Autor: ${metadata.author}</p>
+  </div>
+  <pre>${escapeHtml(text)}</pre>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  downloadBlob(blob, `${metadata.title || "guion"}.html`);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
