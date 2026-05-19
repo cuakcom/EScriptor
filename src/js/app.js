@@ -5,6 +5,7 @@ import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
 import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
+import { AutoSaveManager } from "./autosave.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -138,7 +139,7 @@ function updateAlert() {
 function calculatePages() {
   const text = editor.innerText;
   const lines = text.split('\n').length;
-  const pageContent = Math.ceil(lines / 55);
+  const pageContent = Math.ceil(lines / 30);
   return Math.max(2, pageContent);
 }
 
@@ -212,13 +213,15 @@ editor.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     const currentText = b.textContent.trim();
+
     if (currentText.length === 0) {
-      b.innerHTML = "";
-      updatePlaceholderState(b);
+      b.textContent = "";
+      b.classList.add("is-empty");
     } else {
       detectAndRegisterBlock(b);
+      sanitizeBlockLines(b);
     }
-    sanitizeBlockLines(b);
+
     const n = ENTER_MAP[b.dataset.style] || "text";
     const nb = createBlock(n);
     b.insertAdjacentElement("afterend", nb);
@@ -254,6 +257,25 @@ updateStats();
 document.getElementById("coverTitle").addEventListener("input", () => {
   const title = document.getElementById("coverTitle").value.toUpperCase();
   document.getElementById("coverTitleDisplay").textContent = title || "";
+});
+
+const autoSaveManager = new AutoSaveManager(300000);
+autoSaveManager.start();
+
+document.getElementById("quickSaveBtn").addEventListener("click", async () => {
+  const title = document.getElementById("coverTitle")?.value || "guion";
+  const author = document.getElementById("coverAuthor")?.value || "";
+  const content = document.getElementById("editor")?.innerHTML || "";
+  const editorText = document.getElementById("editor")?.innerText || "";
+
+  await saveToLocalStorage(title, { title, author, content, editorText, timestamp: new Date().toISOString() });
+
+  const status = document.getElementById("autosaveStatus");
+  status.textContent = "✓ Guardado";
+  status.style.color = "#1f8f3a";
+  setTimeout(() => {
+    status.textContent = "";
+  }, 2000);
 });
 
 document.getElementById("saveBtnMain").addEventListener("click", (e) => {

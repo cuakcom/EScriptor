@@ -5,6 +5,8 @@ export function renderNavbar() {
         <label for="styleSelector">Estilo:</label>
         <select id="styleSelector" aria-label="Selector de estilo"></select>
 
+        <button type="button" id="quickSaveBtn" class="quick-save-btn" title="Guardar rápido (Ctrl+S)">💾</button>
+
         <div class="save-wrap">
           <button type="button" id="saveBtnMain">Guardar ▾</button>
           <div class="save-menu" id="saveMenu">
@@ -28,6 +30,7 @@ export function renderNavbar() {
       <div class="menu-right">
         <span>Avisos:</span>
         <span id="lineAlert" class="notice">Sin alertas</span>
+        <span id="autosaveStatus" class="autosave-status"></span>
       </div>
     </header>
 
