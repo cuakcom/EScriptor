@@ -215,13 +215,14 @@ button:hover, select:hover {
 .style-scene-heading {
   text-transform: uppercase;
   position: relative;
-  padding-left: 2cm;
+  padding-left: 1.5cm;
 }
 .style-scene-heading::before {
-  content: "Escena " attr(data-scene-number) ": ";
+  content: attr(data-scene-number) ".";
   position: absolute;
   left: 0;
   font-weight: bold;
+  min-width: 1cm;
 }
 .style-action { text-align: left; }
 .style-character { text-transform: uppercase; margin-left: 3.5cm; text-align: center; width: 3cm; }

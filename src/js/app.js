@@ -8,6 +8,7 @@ import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage,
 import { AutoSaveManager } from "./autosave.js";
 import { updateSceneNumbers } from "./sceneManager.js";
 import { exportToDOCX, exportToFDX, importFromFDX, importFromDOCX } from "./documentExport.js";
+import { handleSceneHeadingInput, handleSceneHeadingTab } from "./sceneHeadingEditor.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -204,6 +205,18 @@ editor.addEventListener("keydown", (e) => {
   const b = getCurrentBlock();
   if (!b) return;
 
+  if (b.dataset.style === "scene-heading") {
+    if (e.key === "Tab") {
+      const result = handleSceneHeadingTab(e, b);
+      if (result === 'next-style') {
+        const n = getStyleCycle(b.dataset.style);
+        applyBlockStyle(b, n);
+        styleSelector.value = n;
+      }
+      return;
+    }
+  }
+
   if (e.key === "Tab") {
     e.preventDefault();
     const n = getStyleCycle(b.dataset.style);
@@ -235,7 +248,13 @@ editor.addEventListener("keydown", (e) => {
 
 editor.addEventListener("input", () => {
   const b = getCurrentBlock();
-  if (b) sanitizeBlockLines(b);
+  if (b) {
+    sanitizeBlockLines(b);
+
+    if (b.dataset.style === "scene-heading") {
+      handleSceneHeadingInput(event, b);
+    }
+  }
   editor.querySelectorAll(".script-block").forEach(updatePlaceholderState);
   updateAlert();
   updateStats();
