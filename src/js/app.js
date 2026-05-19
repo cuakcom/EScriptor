@@ -3,7 +3,7 @@ import { renderCenter } from "../components/center.js";
 import { renderFooter } from "../components/footer.js";
 import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
-import { saveScriptLocally, loadScriptLocally, exportToText } from "./storage.js";
+import { saveScriptLocally, exportToText } from "./storage.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -152,7 +152,7 @@ function updateStats() {
 }
 
 function updatePageNumbers(totalPages) {
-  const pages = pagesContainer.querySelectorAll(".page");
+  let pages = pagesContainer.querySelectorAll(".page");
   for (let i = 0; i < pages.length; i++) {
     const sheet = pages[i].querySelector(".sheet");
     const pageNum = sheet?.querySelector(".page-number");
@@ -161,7 +161,8 @@ function updatePageNumbers(totalPages) {
     }
   }
 
-  while (pages.length < totalPages) {
+  while (pagesContainer.querySelectorAll(".page").length < totalPages) {
+    pages = pagesContainer.querySelectorAll(".page");
     const newPage = document.createElement("section");
     newPage.className = "page";
     newPage.innerHTML = `
