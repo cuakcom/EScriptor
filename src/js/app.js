@@ -164,69 +164,17 @@ function updateStats() {
 
 function updatePageNumbers(totalPages) {
   const pages = pagesContainer.querySelectorAll(".page");
-  const pageHeight = 23 * 37.8;
-
-  let currentPageIdx = 2;
-  let currentPageHeight = 0;
-  let currentPageContent = [];
-
-  const blocks = Array.from(editor.querySelectorAll(".script-block"));
-
-  for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
-    const block = blocks[blockIdx];
-    const blockHeight = block.offsetHeight;
-
-    if (currentPageHeight + blockHeight > pageHeight && currentPageIdx < pages.length - 1) {
-      if (currentPageContent.length > 0) {
-        renderPageContent(pages[currentPageIdx], currentPageContent);
-      }
-      currentPageIdx++;
-      currentPageHeight = 0;
-      currentPageContent = [];
-    }
-
-    currentPageContent.push(block.cloneNode(true));
-    currentPageHeight += blockHeight;
-  }
-
-  if (currentPageContent.length > 0 && currentPageIdx < pages.length) {
-    renderPageContent(pages[currentPageIdx], currentPageContent);
-  }
-
-  for (let i = currentPageIdx + 1; i < pages.length; i++) {
-    const sheet = pages[i].querySelector(".sheet");
-    const content = sheet.querySelector(".page-content");
-    if (content) content.innerHTML = "";
-  }
 
   while (pagesContainer.querySelectorAll(".page").length < totalPages) {
-    pages = pagesContainer.querySelectorAll(".page");
     const newPage = document.createElement("section");
     newPage.className = "page";
     newPage.innerHTML = `
       <article class="sheet">
         <div class="page-number">${pages.length + 1}.</div>
-        <div class="page-content"></div>
       </article>
     `;
     pagesContainer.append(newPage);
   }
-}
-
-function renderPageContent(page, blocks) {
-  const sheet = page.querySelector(".sheet");
-  let content = sheet.querySelector(".page-content");
-
-  if (!content) {
-    content = document.createElement("div");
-    content.className = "page-content";
-    sheet.appendChild(content);
-  }
-
-  content.innerHTML = "";
-  blocks.forEach(block => {
-    content.appendChild(block);
-  });
 }
 
 function detectAndRegisterBlock(block) {

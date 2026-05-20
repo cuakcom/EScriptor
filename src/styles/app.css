@@ -196,12 +196,16 @@ button:hover, select:hover {
   white-space: pre-wrap;
   word-break: break-word;
   text-align: left;
+  position: relative;
 }
 .script-block + .script-block[data-style="scene-heading"] { margin-top: 2em; }
 .script-block.is-empty::before {
   content: attr(data-placeholder);
   color: var(--muted);
   pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 .style-act { text-transform: uppercase; text-align: center; }
 .style-scene-heading { text-transform: uppercase; }
