@@ -157,18 +157,20 @@ function updatePageNumbers(totalPages) {
   const pages = pagesContainer.querySelectorAll(".page");
   const pageHeight = 23 * 37.8;
 
-  let currentPageIdx = 1;
+  let currentPageIdx = 2;
   let currentPageHeight = 0;
   let currentPageContent = [];
 
-  const blocks = editor.querySelectorAll(".script-block");
+  const blocks = Array.from(editor.querySelectorAll(".script-block"));
 
   for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
     const block = blocks[blockIdx];
     const blockHeight = block.offsetHeight;
 
     if (currentPageHeight + blockHeight > pageHeight && currentPageIdx < pages.length - 1) {
-      renderPageContent(pages[currentPageIdx], currentPageContent);
+      if (currentPageContent.length > 0) {
+        renderPageContent(pages[currentPageIdx], currentPageContent);
+      }
       currentPageIdx++;
       currentPageHeight = 0;
       currentPageContent = [];
@@ -178,7 +180,7 @@ function updatePageNumbers(totalPages) {
     currentPageHeight += blockHeight;
   }
 
-  if (currentPageContent.length > 0) {
+  if (currentPageContent.length > 0 && currentPageIdx < pages.length) {
     renderPageContent(pages[currentPageIdx], currentPageContent);
   }
 
