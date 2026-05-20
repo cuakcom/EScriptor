@@ -1,8 +1,8 @@
 export function renderCenter() {
   return `
     <main class="main" id="pagesContainer">
-      <section class="page">
-        <article class="sheet cover-sheet">
+      <section class="page cover-page">
+        <div class="sheet cover-sheet">
           <input id="coverTitle" type="text" class="cover-input-hidden" />
           <div class="cover-content">
             <div class="cover-title-section">
@@ -21,13 +21,11 @@ export function renderCenter() {
               <input id="coverDate" type="text" class="cover-input" placeholder="DD/MM/YYYY" />
             </div>
           </div>
-        </article>
+        </div>
       </section>
 
-      <section class="page">
-        <article class="sheet">
-          <div id="editor" class="editor" contenteditable="true" spellcheck="false" aria-label="Editor de guión"></div>
-        </article>
+      <section class="page" data-page="1">
+        <div id="editor" class="sheet editor" contenteditable="true" spellcheck="false" aria-label="Editor de guión"></div>
       </section>
     </main>
   `;
