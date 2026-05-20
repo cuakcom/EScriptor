@@ -5,7 +5,7 @@ import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
 import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
-import { initSceneHeadingToolbar } from "./sceneHeadingEditor.js";
+import { initSceneHeadingToolbar, showToolbarForBlock } from "./sceneHeadingEditor.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -169,19 +169,31 @@ function updatePageNumbers(totalPages) {
     const newPage = document.createElement("section");
     newPage.className = "page";
     newPage.innerHTML = `
-      <article class="sheet">
-        <div class="page-number">${pages.length + 1}.</div>
-      </article>
+      <article class="sheet"></article>
     `;
     pagesContainer.append(newPage);
   }
 }
 
+function getSceneNumber() {
+  const sceneBlocks = editor.querySelectorAll(".script-block[data-style='scene-heading']");
+  let count = 0;
+  sceneBlocks.forEach(b => {
+    if (b.textContent.trim().length > 0) count++;
+  });
+  return count + 1;
+}
+
 function detectAndRegisterBlock(block) {
   const style = block.dataset.style;
-  const text = block.textContent.trim();
+  let text = block.textContent.trim();
 
   if (style === "scene-heading") {
+    const sceneNum = getSceneNumber();
+    if (!text.match(/^\d+\./)) {
+      text = `${sceneNum}. ${text}`;
+      block.textContent = text;
+    }
     const sceneTitle = detectSceneTitle(text);
     if (sceneTitle) scriptManager.addScene(sceneTitle);
   } else if (style === "character") {
@@ -218,6 +230,7 @@ editor.addEventListener("keydown", (e) => {
       updatePlaceholderState(b);
     } else {
       detectAndRegisterBlock(b);
+      b.classList.remove("is-empty");
     }
     sanitizeBlockLines(b);
     const n = ENTER_MAP[b.dataset.style] || "text";
@@ -225,6 +238,9 @@ editor.addEventListener("keydown", (e) => {
     b.insertAdjacentElement("afterend", nb);
     styleSelector.value = n;
     placeCaretAtEnd(nb);
+    if (n === "scene-heading") {
+      setTimeout(() => showToolbarForBlock(nb), 10);
+    }
   }
 });
 
@@ -243,6 +259,9 @@ editor.addEventListener("click", () => {
   if (!b) return;
   styleSelector.value = b.dataset.style;
   updateAlert();
+  if (b.dataset.style === "scene-heading") {
+    showToolbarForBlock(b);
+  }
 });
 
 initSceneHeadingToolbar();
