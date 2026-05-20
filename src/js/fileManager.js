@@ -51,40 +51,143 @@ export function saveToLocalFile(format = 'json') {
 
 export function loadFromLocalFile(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const content = e.target.result;
-
-        if (file.type === 'application/json' || file.name.endsWith('.json')) {
-          const data = JSON.parse(content);
-          resolve({
-            title: data.title,
-            author: data.author,
-            content: data.content,
-            editorText: data.editorText,
-            timestamp: data.timestamp
-          });
-        } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-          resolve({
-            title: file.name.replace('.txt', ''),
-            author: '',
-            content: `<div class="script-block" data-style="text">${escapeHtml(content)}</div>`,
-            editorText: content,
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          reject(new Error('Formato de archivo no soportado'));
-        }
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    reader.onerror = () => reject(new Error('Error al leer el archivo'));
-    reader.readAsText(file);
+    if (file.name.endsWith('.json')) {
+      loadJSON(file, resolve, reject);
+    } else if (file.name.endsWith('.txt')) {
+      loadTXT(file, resolve, reject);
+    } else if (file.name.endsWith('.pdf')) {
+      loadPDF(file, resolve, reject);
+    } else if (file.name.endsWith('.docx')) {
+      loadDOCX(file, resolve, reject);
+    } else if (file.name.endsWith('.fdx')) {
+      loadFDX(file, resolve, reject);
+    } else {
+      reject(new Error('Formato de archivo no soportado'));
+    }
   });
+}
+
+function loadJSON(file, resolve, reject) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      resolve({
+        title: data.title,
+        author: data.author,
+        content: data.content,
+        editorText: data.editorText,
+        timestamp: data.timestamp
+      });
+    } catch (error) {
+      reject(error);
+    }
+  };
+  reader.onerror = () => reject(new Error('Error al leer JSON'));
+  reader.readAsText(file);
+}
+
+function loadTXT(file, resolve, reject) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const content = e.target.result;
+      resolve({
+        title: file.name.replace('.txt', ''),
+        author: '',
+        content: `<div class="script-block" data-style="text">${escapeHtml(content)}</div>`,
+        editorText: content,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      reject(error);
+    }
+  };
+  reader.onerror = () => reject(new Error('Error al leer TXT'));
+  reader.readAsText(file);
+}
+
+function loadPDF(file, resolve, reject) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join('') + '\n';
+      }
+      resolve({
+        title: file.name.replace('.pdf', ''),
+        author: '',
+        content: `<div class="script-block" data-style="text">${escapeHtml(text)}</div>`,
+        editorText: text,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      reject(new Error('Error al procesar PDF: ' + error.message));
+    }
+  };
+  reader.onerror = () => reject(new Error('Error al leer PDF'));
+  reader.readAsArrayBuffer(file);
+}
+
+function loadDOCX(file, resolve, reject) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+      const text = result.value;
+      resolve({
+        title: file.name.replace('.docx', ''),
+        author: '',
+        content: `<div class="script-block" data-style="text">${escapeHtml(text)}</div>`,
+        editorText: text,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      reject(new Error('Error al procesar DOCX: ' + error.message));
+    }
+  };
+  reader.onerror = () => reject(new Error('Error al leer DOCX'));
+  reader.readAsArrayBuffer(file);
+}
+
+function loadFDX(file, resolve, reject) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const xmlText = e.target.result;
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+      if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+        throw new Error('FDX inválido o corrupto');
+      }
+
+      // Extraer párrafos de FDX
+      let text = '';
+      const paragraphs = xmlDoc.getElementsByTagName('Paragraph');
+      for (let para of paragraphs) {
+        const type = para.getAttribute('Type') || 'ACTION';
+        const textContent = para.textContent.trim();
+        if (textContent) text += textContent + '\n';
+      }
+
+      resolve({
+        title: file.name.replace('.fdx', ''),
+        author: '',
+        content: `<div class="script-block" data-style="text">${escapeHtml(text)}</div>`,
+        editorText: text,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      reject(new Error('Error al procesar FDX: ' + error.message));
+    }
+  };
+  reader.onerror = () => reject(new Error('Error al leer FDX'));
+  reader.readAsText(file);
 }
 
 function downloadBlob(blob, filename) {
