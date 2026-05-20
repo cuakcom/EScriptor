@@ -128,7 +128,11 @@ export function getRecentFiles() {
 }
 
 export function saveToLocalStorage(filename, data) {
-  localStorage.setItem(`screenplay_${filename}`, JSON.stringify(data));
+  const dataWithName = {
+    ...data,
+    filename: filename
+  };
+  localStorage.setItem(`screenplay_${filename}`, JSON.stringify(dataWithName));
 }
 
 export function loadFromLocalStorage(filename) {

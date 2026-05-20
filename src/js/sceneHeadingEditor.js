@@ -1,37 +1,42 @@
 export function handleSceneHeadingInput(event, block) {
-  const inputChar = event.data;
-  if (!inputChar) return;
+  if (!event.data) return;
 
+  const char = event.data[event.data.length - 1];
   let replacement = null;
+  let length = 0;
 
-  if (inputChar === 'I') {
+  if (char === 'I' || char === 'i') {
     replacement = 'INT.';
-  } else if (inputChar === 'E') {
+    length = 4;
+  } else if (char === 'E' || char === 'e') {
     replacement = 'EXT.';
-  } else if (inputChar === 'D') {
+    length = 4;
+  } else if (char === 'D' || char === 'd') {
     replacement = 'DÍA';
-  } else if (inputChar === 'N') {
+    length = 3;
+  } else if (char === 'N' || char === 'n') {
     replacement = 'NOCHE';
+    length = 5;
   }
 
-  if (replacement) {
-    const text = block.textContent;
-    if (text.endsWith(inputChar)) {
+  if (!replacement) return;
+
+  setTimeout(() => {
+    const text = block.textContent.trimEnd();
+    const lastChar = text[text.length - 1];
+
+    if ((char === 'I' && (lastChar === 'I' || lastChar === 'i')) ||
+        (char === 'E' && (lastChar === 'E' || lastChar === 'e')) ||
+        (char === 'D' && (lastChar === 'D' || lastChar === 'd')) ||
+        (char === 'N' && (lastChar === 'N' || lastChar === 'n'))) {
+
       const before = text.slice(0, -1);
       const newText = before + replacement;
-
       block.textContent = newText;
 
-      const sel = window.getSelection();
-      const range = document.createRange();
-      if (block.firstChild) {
-        range.setStart(block.firstChild, newText.length);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
+      setCaretPosition(block, newText.length);
     }
-  }
+  }, 0);
 }
 
 export function handleSceneHeadingTab(event, block) {

@@ -35,6 +35,12 @@ export class AutoSaveManager {
       isAutosave: true
     };
 
+    const status = document.getElementById("autosaveStatus");
+    if (status) {
+      status.textContent = "Guardando...";
+      status.style.color = "#0066cc";
+    }
+
     try {
       const response = await fetch("src/php/autosave.php", {
         method: "POST",
@@ -46,17 +52,23 @@ export class AutoSaveManager {
         const result = await response.json();
         console.log("Autoguardado:", result.message);
 
-        const status = document.getElementById("autosaveStatus");
         if (status) {
-          status.textContent = "✓ Autoguardado";
+          status.textContent = "✓ Guardado";
           status.style.color = "#1f8f3a";
           setTimeout(() => {
             status.textContent = "";
-          }, 2000);
+          }, 3000);
         }
       }
     } catch (error) {
       console.error("Error en autoguardado:", error);
+      if (status) {
+        status.textContent = "✗ Error al guardar";
+        status.style.color = "#dc3545";
+        setTimeout(() => {
+          status.textContent = "";
+        }, 3000);
+      }
     }
   }
 }
