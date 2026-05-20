@@ -45,7 +45,8 @@ export function renderNavbar() {
           <div id="loadList"></div>
           <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
             <label>O cargar archivo:</label><br>
-            <input type="file" id="fileInput" accept=".json,.txt" style="margin-top: 0.5rem;">
+            <input type="file" id="fileInput" accept=".json,.txt,.pdf,.docx,.fdx" style="margin-top: 0.5rem;">
+            <small style="color: #999; display: block; margin-top: 0.3rem;">Soportados: JSON, TXT, PDF, DOCX, Final Draft</small>
           </div>
         </div>
       </div>

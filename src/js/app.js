@@ -448,7 +448,7 @@ document.querySelector(".export-wrap button").addEventListener("click", (e) => {
 });
 
 document.querySelectorAll(".export-menu button").forEach(btn => {
-  btn.addEventListener("click", (e) => {
+  btn.addEventListener("click", async (e) => {
     e.stopPropagation();
     const format = btn.getAttribute("data-format");
     const title = document.getElementById("coverTitle")?.value || "guion";
@@ -456,7 +456,7 @@ document.querySelectorAll(".export-menu button").forEach(btn => {
     if (format === "txt") {
       exportToText();
     } else if (format === "pdf") {
-      exportToPDF();
+      await exportToPDF();
     } else if (format === "docx") {
       alert("Exportación a DOCX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
     } else if (format === "fdx") {
