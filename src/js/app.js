@@ -9,7 +9,14 @@ import { handleSceneHeadingInput, handleSceneHeadingTab } from "./sceneHeadingEd
 
 const app = document.getElementById("app");
 app.className = "app";
-app.innerHTML = `${renderSidebar()}${renderNavbar()}${renderCenter()}${renderFooter()}`;
+app.innerHTML = `
+  ${renderSidebar()}
+  <div class="main-wrapper">
+    ${renderNavbar()}
+    ${renderCenter()}
+    ${renderFooter()}
+  </div>
+`;
 
 const STYLES = [
   { key: "act", label: "Acto", css: "style-act", placeholder: "ACTO I" },
@@ -77,9 +84,11 @@ function updatePlaceholderState(b) {
 
 function applyBlockStyle(b, k) {
   b.dataset.style = k;
+  const isEmptyBefore = b.classList.contains("is-empty");
   b.className = "script-block " + styleByKey[k].css;
   b.dataset.placeholder = styleByKey[k].placeholder;
   if (k === "character") b.dataset.lastFromCharacter = "true";
+  if (isEmptyBefore) b.classList.add("is-empty");
   updatePlaceholderState(b);
 }
 
@@ -287,6 +296,7 @@ editor.addEventListener("input", (e) => {
   const b = getCurrentBlock();
   if (b) {
     sanitizeBlockLines(b);
+    updatePlaceholderState(b);
 
     if (b.dataset.style === "scene-heading") {
       handleSceneHeadingInput(e, b);
@@ -432,11 +442,15 @@ document.querySelectorAll(".export-menu button").forEach(btn => {
 });
 
 function loadScriptData(data) {
-  document.getElementById("coverTitle").value = data.title;
-  document.getElementById("coverAuthor").value = data.author;
-  document.getElementById("editor").innerHTML = data.content;
+  document.getElementById("coverTitle").value = data.title || data.filename || "";
+  document.getElementById("coverAuthor").value = data.author || "";
+  document.getElementById("editor").innerHTML = data.content || "";
   document.getElementById("editor").querySelectorAll(".script-block").forEach(block => {
     updatePlaceholderState(block);
   });
+  if (data.filename) {
+    document.getElementById("currentFileName").textContent = `Archivo: ${data.filename}`;
+    document.getElementById("currentFileName").style.display = "inline";
+  }
   updateStats();
 }
