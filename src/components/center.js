@@ -3,7 +3,7 @@ export function renderCenter() {
     <main class="main" id="pagesContainer">
       <section class="page cover-page">
         <div class="sheet cover-sheet">
-          <input id="coverTitle" type="text" class="cover-input-hidden" />
+          <input id="coverTitle" type="text" class="cover-input" placeholder="TÍTULO" />
           <div class="cover-content">
             <div class="cover-title-section">
               <div class="cover-title" id="coverTitleDisplay">&nbsp;</div>

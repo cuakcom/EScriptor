@@ -209,18 +209,30 @@ function updatePageNumbers(totalPages) {
   // Deprecated - la paginación ahora es automática
 }
 
+function showSaveStatus(message, duration = 3000) {
+  const statusElem = document.getElementById("saveStatus");
+  statusElem.textContent = message;
+  statusElem.style.color = "#1f8f3a";
+  setTimeout(() => {
+    statusElem.textContent = "";
+  }, duration);
+}
+
+function updateLastSaved(timestamp) {
+  const elem = document.getElementById("lastSavedInfo");
+  const date = new Date(timestamp).toLocaleString('es-ES');
+  elem.textContent = `Último guardado: ${date}`;
+}
+
 function getSceneNumber() {
-  // Contar todos los scene-heading con número en todos los editores
+  // Contar solo los scene-heading que ya tienen número
   const allEditors = pagesContainer.querySelectorAll('.editor');
   let count = 0;
   allEditors.forEach(ed => {
     const sceneBlocks = ed.querySelectorAll(".script-block[data-style='scene-heading']");
     sceneBlocks.forEach(b => {
       const text = b.textContent.trim();
-      // Si ya tiene número, no contar de nuevo
       if (text.match(/^\d+\./)) count++;
-      // Si no tiene número pero tiene contenido, contar
-      else if (text.length > 0) count++;
     });
   });
   return count + 1;
@@ -344,21 +356,20 @@ document.getElementById("saveBtnMain").addEventListener("click", (e) => {
   menu.style.display = menu.style.display === "none" ? "block" : "none";
 });
 
-document.getElementById("saveLocalBtn").addEventListener("click", () => {
+document.getElementById("downloadBtn").addEventListener("click", () => {
   document.getElementById("saveFormatModal").style.display = "flex";
   document.getElementById("saveMenu").style.display = "none";
 });
 
-document.getElementById("saveAsBtn").addEventListener("click", () => {
-  const filename = prompt("Nombre del archivo:");
-  if (filename) {
-    const title = document.getElementById("coverTitle")?.value || "guion";
-    const author = document.getElementById("coverAuthor")?.value || "";
-    const content = document.getElementById("editor")?.innerHTML || "";
-    const editorText = document.getElementById("editor")?.innerText || "";
-    saveToLocalStorage(filename, { title, author, content, editorText, timestamp: new Date().toISOString() });
-    alert(`Guardado en memoria como "${filename}"`);
-  }
+document.getElementById("saveProgressBtn").addEventListener("click", () => {
+  const title = document.getElementById("coverTitle")?.value || "guion";
+  const author = document.getElementById("coverAuthor")?.value || "";
+  const content = Array.from(pagesContainer.querySelectorAll('.editor')).map(ed => ed.innerHTML).join('');
+  const editorText = Array.from(pagesContainer.querySelectorAll('.editor')).map(ed => ed.innerText).join('\n\n');
+  const timestamp = new Date().toISOString();
+  saveToLocalStorage(title, { title, author, content, editorText, timestamp });
+  showSaveStatus("Progreso guardado", 3000);
+  updateLastSaved(timestamp);
   document.getElementById("saveMenu").style.display = "none";
 });
 

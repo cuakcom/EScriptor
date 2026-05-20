@@ -1,6 +1,6 @@
 export class AutoSaveManager {
-  constructor(interval = 300000) {
-    this.interval = interval;
+  constructor(interval = 600000) {
+    this.interval = interval; // 10 minutos = 600000ms
     this.timeout = null;
     this.autosaves = [];
     this.maxAutosaves = 5;
@@ -22,8 +22,12 @@ export class AutoSaveManager {
   async performAutosave() {
     const title = document.getElementById("coverTitle")?.value || "Autosave";
     const author = document.getElementById("coverAuthor")?.value || "";
-    const content = document.getElementById("editor")?.innerHTML || "";
-    const editorText = document.getElementById("editor")?.innerText || "";
+
+    // Obtener contenido de todas las páginas
+    const pagesContainer = document.getElementById("pagesContainer");
+    const allEditors = pagesContainer ? pagesContainer.querySelectorAll('.editor') : [];
+    const content = Array.from(allEditors).map(ed => ed.innerHTML).join('');
+    const editorText = Array.from(allEditors).map(ed => ed.innerText).join('\n\n');
 
     const filename = `autosave_${new Date().getTime()}`;
     const data = {
@@ -35,10 +39,10 @@ export class AutoSaveManager {
       isAutosave: true
     };
 
-    const status = document.getElementById("autosaveStatus");
-    if (status) {
-      status.textContent = "Guardando...";
-      status.style.color = "#0066cc";
+    const statusElem = document.getElementById("saveStatus");
+    if (statusElem) {
+      statusElem.textContent = "Guardando...";
+      statusElem.style.color = "#0066cc";
     }
 
     try {
@@ -52,21 +56,27 @@ export class AutoSaveManager {
         const result = await response.json();
         console.log("Autoguardado:", result.message);
 
-        if (status) {
-          status.textContent = "✓ Guardado";
-          status.style.color = "#1f8f3a";
+        if (statusElem) {
+          statusElem.textContent = "Guardado";
+          statusElem.style.color = "#1f8f3a";
+          // Actualizar "Último guardado"
+          const lastSavedElem = document.getElementById("lastSavedInfo");
+          if (lastSavedElem) {
+            const date = new Date().toLocaleString('es-ES');
+            lastSavedElem.textContent = `Último guardado: ${date}`;
+          }
           setTimeout(() => {
-            status.textContent = "";
+            statusElem.textContent = "";
           }, 3000);
         }
       }
     } catch (error) {
       console.error("Error en autoguardado:", error);
-      if (status) {
-        status.textContent = "✗ Error al guardar";
-        status.style.color = "#dc3545";
+      if (statusElem) {
+        statusElem.textContent = "Error al guardar";
+        statusElem.style.color = "#dc3545";
         setTimeout(() => {
-          status.textContent = "";
+          statusElem.textContent = "";
         }, 3000);
       }
     }

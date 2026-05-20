@@ -8,10 +8,10 @@ export function renderNavbar() {
         <button type="button" id="quickSaveBtn" class="quick-save-btn" title="Guardar rápido (Ctrl+S)">💾</button>
 
         <div class="save-wrap">
-          <button type="button" id="saveBtnMain">Guardar ▾</button>
+          <button type="button" id="saveBtnMain">💾</button>
           <div class="save-menu" id="saveMenu">
-            <button type="button" id="saveLocalBtn">Guardar en ordenador</button>
-            <button type="button" id="saveAsBtn">Guardar como...</button>
+            <button type="button" id="saveProgressBtn">Guardar progreso</button>
+            <button type="button" id="downloadBtn">Descargar</button>
           </div>
         </div>
 
@@ -28,9 +28,10 @@ export function renderNavbar() {
         </div>
       </div>
       <div class="menu-right">
+        <span id="lastSavedInfo" class="autosave-status" style="margin-right: 1rem;"></span>
+        <span id="saveStatus" class="notice" style="margin-right: 1rem;"></span>
         <span>Avisos:</span>
         <span id="lineAlert" class="notice">Sin alertas</span>
-        <span id="autosaveStatus" class="autosave-status"></span>
       </div>
     </header>
 
