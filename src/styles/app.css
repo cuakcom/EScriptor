@@ -121,17 +121,43 @@ button:hover, select:hover {
   align-items: center;
   gap: 1.2rem;
 }
-.page { width: min(100%, calc(var(--paper-width) + 3rem)); padding: 1.5rem; display: flex; justify-content: center; }
+.page {
+  width: min(100%, calc(var(--paper-width) + 3rem));
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  page-break-after: always;
+}
 .sheet {
   width: var(--paper-width);
-  min-height: var(--paper-min-height);
+  height: var(--paper-min-height);
   background: var(--paper);
   box-shadow: 0 2px 20px rgba(0,0,0,0.12);
   padding: 2.5cm 2cm;
   position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.page-number { position: absolute; top: 1cm; right: 1.4cm; font-size: 11pt; }
-.cover-fields { margin-top: 7cm; display: grid; gap: 2rem; justify-items: center; }
+.page-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+.page-number {
+  position: absolute;
+  top: 1cm;
+  right: 1.4cm;
+  font-size: 11pt;
+}
+.cover-fields {
+  margin-top: 7cm;
+  display: grid;
+  gap: 2rem;
+  justify-items: center;
+}
 .cover-fields input {
   width: 60%;
   min-width: 12rem;
@@ -143,7 +169,13 @@ button:hover, select:hover {
   outline: none;
   padding: 0.4rem;
 }
-.editor { min-height: 23cm; outline: none; }
+.editor {
+  outline: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .script-block {
   min-height: calc(1em * var(--line-height));
   line-height: var(--line-height);
