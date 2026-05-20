@@ -1,23 +1,36 @@
 export function handleSceneHeadingInput(event, block) {
-  const text = block.textContent;
-  const lastChar = text[text.length - 1];
+  const inputChar = event.data;
+  if (!inputChar) return;
 
-  if (lastChar === 'I') {
-    const before = text.slice(0, -1);
-    block.textContent = before + 'INT.';
-    setCaretPosition(block, before.length + 4);
-  } else if (lastChar === 'E') {
-    const before = text.slice(0, -1);
-    block.textContent = before + 'EXT.';
-    setCaretPosition(block, before.length + 4);
-  } else if (lastChar === 'D') {
-    const before = text.slice(0, -1);
-    block.textContent = before + 'DÍA';
-    setCaretPosition(block, before.length + 3);
-  } else if (lastChar === 'N') {
-    const before = text.slice(0, -1);
-    block.textContent = before + 'NOCHE';
-    setCaretPosition(block, before.length + 5);
+  let replacement = null;
+
+  if (inputChar === 'I') {
+    replacement = 'INT.';
+  } else if (inputChar === 'E') {
+    replacement = 'EXT.';
+  } else if (inputChar === 'D') {
+    replacement = 'DÍA';
+  } else if (inputChar === 'N') {
+    replacement = 'NOCHE';
+  }
+
+  if (replacement) {
+    const text = block.textContent;
+    if (text.endsWith(inputChar)) {
+      const before = text.slice(0, -1);
+      const newText = before + replacement;
+
+      block.textContent = newText;
+
+      const sel = window.getSelection();
+      const range = document.createRange();
+      if (block.firstChild) {
+        range.setStart(block.firstChild, newText.length);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
   }
 }
 

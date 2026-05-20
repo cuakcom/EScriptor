@@ -5,9 +5,6 @@ import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
 import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
-import { AutoSaveManager } from "./autosave.js";
-import { updateSceneNumbers } from "./sceneManager.js";
-import { exportToDOCX, exportToFDX, importFromFDX, importFromDOCX } from "./documentExport.js";
 import { handleSceneHeadingInput, handleSceneHeadingTab } from "./sceneHeadingEditor.js";
 
 const app = document.getElementById("app");
@@ -142,7 +139,7 @@ function updateAlert() {
 function calculatePages() {
   const text = editor.innerText;
   const lines = text.split('\n').length;
-  const pageContent = Math.ceil(lines / 30);
+  const pageContent = Math.ceil(lines / 55);
   return Math.max(2, pageContent);
 }
 
@@ -157,13 +154,40 @@ function updateStats() {
 }
 
 function updatePageNumbers(totalPages) {
-  let pages = pagesContainer.querySelectorAll(".page");
-  for (let i = 0; i < pages.length; i++) {
-    const sheet = pages[i].querySelector(".sheet");
-    const pageNum = sheet?.querySelector(".page-number");
-    if (pageNum && i > 0) {
-      pageNum.textContent = `${i + 1}.`;
+  const pages = pagesContainer.querySelectorAll(".page");
+  const pageHeight = 23 * 37.8;
+
+  let currentPageIdx = 2;
+  let currentPageHeight = 0;
+  let currentPageContent = [];
+
+  const blocks = Array.from(editor.querySelectorAll(".script-block"));
+
+  for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
+    const block = blocks[blockIdx];
+    const blockHeight = block.offsetHeight;
+
+    if (currentPageHeight + blockHeight > pageHeight && currentPageIdx < pages.length - 1) {
+      if (currentPageContent.length > 0) {
+        renderPageContent(pages[currentPageIdx], currentPageContent);
+      }
+      currentPageIdx++;
+      currentPageHeight = 0;
+      currentPageContent = [];
     }
+
+    currentPageContent.push(block.cloneNode(true));
+    currentPageHeight += blockHeight;
+  }
+
+  if (currentPageContent.length > 0 && currentPageIdx < pages.length) {
+    renderPageContent(pages[currentPageIdx], currentPageContent);
+  }
+
+  for (let i = currentPageIdx + 1; i < pages.length; i++) {
+    const sheet = pages[i].querySelector(".sheet");
+    const content = sheet.querySelector(".page-content");
+    if (content) content.innerHTML = "";
   }
 
   while (pagesContainer.querySelectorAll(".page").length < totalPages) {
@@ -173,11 +197,27 @@ function updatePageNumbers(totalPages) {
     newPage.innerHTML = `
       <article class="sheet">
         <div class="page-number">${pages.length + 1}.</div>
-        <div class="editor-content"></div>
+        <div class="page-content"></div>
       </article>
     `;
     pagesContainer.append(newPage);
   }
+}
+
+function renderPageContent(page, blocks) {
+  const sheet = page.querySelector(".sheet");
+  let content = sheet.querySelector(".page-content");
+
+  if (!content) {
+    content = document.createElement("div");
+    content.className = "page-content";
+    sheet.appendChild(content);
+  }
+
+  content.innerHTML = "";
+  blocks.forEach(block => {
+    content.appendChild(block);
+  });
 }
 
 function detectAndRegisterBlock(block) {
@@ -187,7 +227,6 @@ function detectAndRegisterBlock(block) {
   if (style === "scene-heading") {
     const sceneTitle = detectSceneTitle(text);
     if (sceneTitle) scriptManager.addScene(sceneTitle);
-    updateSceneNumbers();
   } else if (style === "character") {
     const charName = detectCharacterName(text);
     if (charName) scriptManager.addCharacter(charName);
@@ -229,15 +268,13 @@ editor.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     const currentText = b.textContent.trim();
-
     if (currentText.length === 0) {
-      b.textContent = "";
-      b.classList.add("is-empty");
+      b.innerHTML = "";
+      updatePlaceholderState(b);
     } else {
       detectAndRegisterBlock(b);
-      sanitizeBlockLines(b);
     }
-
+    sanitizeBlockLines(b);
     const n = ENTER_MAP[b.dataset.style] || "text";
     const nb = createBlock(n);
     b.insertAdjacentElement("afterend", nb);
@@ -246,19 +283,18 @@ editor.addEventListener("keydown", (e) => {
   }
 });
 
-editor.addEventListener("input", () => {
+editor.addEventListener("input", (e) => {
   const b = getCurrentBlock();
   if (b) {
     sanitizeBlockLines(b);
 
     if (b.dataset.style === "scene-heading") {
-      handleSceneHeadingInput(event, b);
+      handleSceneHeadingInput(e, b);
     }
   }
   editor.querySelectorAll(".script-block").forEach(updatePlaceholderState);
   updateAlert();
   updateStats();
-  updateSceneNumbers();
   const c = getCurrentBlock();
   if (c) styleSelector.value = c.dataset.style;
 });
@@ -276,30 +312,6 @@ styleSelector.value = "scene-heading";
 placeCaretAtEnd(firstBlock);
 updateAlert();
 updateStats();
-
-document.getElementById("coverTitle").addEventListener("input", () => {
-  const title = document.getElementById("coverTitle").value.toUpperCase();
-  document.getElementById("coverTitleDisplay").textContent = title || "";
-});
-
-const autoSaveManager = new AutoSaveManager(300000);
-autoSaveManager.start();
-
-document.getElementById("quickSaveBtn").addEventListener("click", async () => {
-  const title = document.getElementById("coverTitle")?.value || "guion";
-  const author = document.getElementById("coverAuthor")?.value || "";
-  const content = document.getElementById("editor")?.innerHTML || "";
-  const editorText = document.getElementById("editor")?.innerText || "";
-
-  await saveToLocalStorage(title, { title, author, content, editorText, timestamp: new Date().toISOString() });
-
-  const status = document.getElementById("autosaveStatus");
-  status.textContent = "✓ Guardado";
-  status.style.color = "#1f8f3a";
-  setTimeout(() => {
-    status.textContent = "";
-  }, 2000);
-});
 
 document.getElementById("saveBtnMain").addEventListener("click", (e) => {
   e.stopPropagation();
@@ -361,20 +373,7 @@ document.getElementById("fileInput").addEventListener("change", async (e) => {
   if (!file) return;
 
   try {
-    let data;
-
-    if (file.name.endsWith('.fdx')) {
-      data = await importFromFDX(file);
-      data.content = `<div class="script-block" data-style="text">${escapeHtml(data.editorText)}</div>`;
-    } else if (file.name.endsWith('.docx')) {
-      data = await importFromDOCX(file);
-      data.content = `<div class="script-block" data-style="text">${escapeHtml(data.editorText)}</div>`;
-    } else if (file.name.endsWith('.html')) {
-      data = await loadFromLocalFile(file);
-    } else {
-      data = await loadFromLocalFile(file);
-    }
-
+    const data = await loadFromLocalFile(file);
     document.getElementById("coverTitle").value = data.title;
     document.getElementById("coverAuthor").value = data.author;
     document.getElementById("editor").innerHTML = data.content;
@@ -384,12 +383,6 @@ document.getElementById("fileInput").addEventListener("change", async (e) => {
     alert("Error al cargar el archivo: " + error.message);
   }
 });
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
 
 document.getElementById("closeSaveFormatModal").addEventListener("click", () => {
   document.getElementById("saveFormatModal").style.display = "none";
@@ -418,36 +411,24 @@ document.querySelector(".export-wrap button").addEventListener("click", (e) => {
   menu.style.display = menu.style.display === "none" ? "block" : "none";
 });
 
-document.getElementById("exportTxt")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  exportToText();
-  document.querySelector(".export-menu").style.display = "none";
-});
+document.querySelectorAll(".export-menu button").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const format = btn.getAttribute("data-format");
+    const title = document.getElementById("coverTitle")?.value || "guion";
 
-document.getElementById("exportDOCX")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  try {
-    exportToDOCX();
-  } catch (error) {
-    alert("Error al exportar DOCX: " + error.message);
-  }
-  document.querySelector(".export-menu").style.display = "none";
-});
+    if (format === "txt") {
+      exportToText();
+    } else if (format === "pdf") {
+      exportToPDF();
+    } else if (format === "docx") {
+      alert("Exportación a DOCX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
+    } else if (format === "fdx") {
+      alert("Exportación a FDX requiere servidor PHP. Guarda como TXT o JSON en su lugar.");
+    }
 
-document.getElementById("exportFDX")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  try {
-    exportToFDX();
-  } catch (error) {
-    alert("Error al exportar FDX: " + error.message);
-  }
-  document.querySelector(".export-menu").style.display = "none";
-});
-
-document.getElementById("exportPDF")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  exportToPDF();
-  document.querySelector(".export-menu").style.display = "none";
+    document.querySelector(".export-menu").style.display = "none";
+  });
 });
 
 function loadScriptData(data) {
