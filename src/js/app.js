@@ -188,6 +188,7 @@ function checkPageOverflow(editorElem) {
     const newPage = document.createElement('section');
     newPage.className = 'page';
     newPage.setAttribute('data-page', pageNum);
+    newPage.setAttribute('data-page-number', `${pageNum}.`);
     newPage.innerHTML = `<div class="sheet editor" contenteditable="true" spellcheck="false"></div>`;
 
     parentPage.insertAdjacentElement('afterend', newPage);
@@ -209,10 +210,18 @@ function updatePageNumbers(totalPages) {
 }
 
 function getSceneNumber() {
-  const sceneBlocks = editor.querySelectorAll(".script-block[data-style='scene-heading']");
+  // Contar todos los scene-heading con número en todos los editores
+  const allEditors = pagesContainer.querySelectorAll('.editor');
   let count = 0;
-  sceneBlocks.forEach(b => {
-    if (b.textContent.trim().length > 0) count++;
+  allEditors.forEach(ed => {
+    const sceneBlocks = ed.querySelectorAll(".script-block[data-style='scene-heading']");
+    sceneBlocks.forEach(b => {
+      const text = b.textContent.trim();
+      // Si ya tiene número, no contar de nuevo
+      if (text.match(/^\d+\./)) count++;
+      // Si no tiene número pero tiene contenido, contar
+      else if (text.length > 0) count++;
+    });
   });
   return count + 1;
 }
@@ -259,6 +268,14 @@ pagesContainer.addEventListener("keydown", (e) => {
   }
 
   if (e.key === "Enter") {
+    // Shift+Enter = salto de línea simple
+    if (e.shiftKey) {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+      return;
+    }
+
+    // Enter normal = nuevo bloque
     e.preventDefault();
     const currentText = b.textContent.trim();
     if (currentText.length === 0) {
