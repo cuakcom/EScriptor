@@ -45,8 +45,13 @@ const ENTER_MAP = {
 const styleByKey = Object.fromEntries(STYLES.map(s => [s.key, s]));
 const scriptManager = new ScriptManager();
 const pagesContainer = document.getElementById("pagesContainer");
-const editor = document.getElementById("editor");
+let editor = document.getElementById("editor");
 const styleSelector = document.getElementById("styleSelector");
+
+// Actualizar editor cuando hay múltiples páginas
+function getActiveEditor() {
+  return document.querySelector('.page[data-page] .editor') || document.getElementById("editor");
+}
 const lineAlert = document.getElementById("lineAlert");
 const statPages = document.getElementById("statPages");
 const statWords = document.getElementById("statWords");
@@ -146,33 +151,61 @@ function updateAlert() {
 }
 
 function calculatePages() {
-  const text = editor.innerText;
-  const lines = text.split('\n').length;
-  const pageContent = Math.ceil(lines / 55);
-  return Math.max(2, pageContent);
+  // Contar páginas de contenido (excluyendo cover page)
+  const allPages = pagesContainer.querySelectorAll('.page:not(.cover-page)');
+  return Math.max(1, allPages.length);
 }
 
 function updateStats() {
-  const text = editor.innerText.replace(/\s+/g, " ").trim();
+  // Obtener texto de todos los editores
+  let allText = "";
+  document.querySelectorAll('.editor').forEach(ed => {
+    allText += " " + ed.innerText;
+  });
+  const text = allText.replace(/\s+/g, " ").trim();
   const words = text ? text.split(" ").length : 0;
   const pages = calculatePages();
   statPages.textContent = `Páginas totales: ${pages}`;
   statWords.textContent = `Palabras: ${words}`;
   statTime.textContent = `Tiempo estimado de producción: ${pages} min`;
-  updatePageNumbers(pages);
+}
+
+function checkPageOverflow(editorElem) {
+  if (!editorElem) return;
+
+  const parentPage = editorElem.closest('.page');
+  if (!parentPage) return;
+
+  // Si el contenido se desborda
+  if (editorElem.scrollHeight > editorElem.clientHeight) {
+    // Encontrar el último bloque script
+    const lastBlock = editorElem.querySelector('.script-block:last-child');
+    if (!lastBlock) return;
+
+    // Crear nueva página
+    const currentPageNum = parseInt(parentPage.getAttribute('data-page')) || 1;
+    const pageNum = currentPageNum + 1;
+    const newPage = document.createElement('section');
+    newPage.className = 'page';
+    newPage.setAttribute('data-page', pageNum);
+    newPage.innerHTML = `<div class="sheet editor" contenteditable="true" spellcheck="false"></div>`;
+
+    parentPage.insertAdjacentElement('afterend', newPage);
+
+    // Mover el último bloque a la nueva página
+    const newEditor = newPage.querySelector('.editor');
+    newEditor.appendChild(lastBlock);
+
+    // Actualizar estadísticas
+    updateStats();
+
+    // Recursivamente verificar si la nueva página también se desborda
+    setTimeout(() => checkPageOverflow(newEditor), 100);
+  }
 }
 
 function updatePageNumbers(totalPages) {
-  const pages = pagesContainer.querySelectorAll(".page");
-
-  while (pagesContainer.querySelectorAll(".page").length < totalPages) {
-    const newPage = document.createElement("section");
-    newPage.className = "page";
-    newPage.innerHTML = `
-      <article class="sheet"></article>
-    `;
-    pagesContainer.append(newPage);
-  }
+  // Deprecated - la paginación ahora es automática
 }
 
 function getSceneNumber() {
@@ -209,7 +242,10 @@ styleSelector.addEventListener("change", () => {
   updateAlert();
 });
 
-editor.addEventListener("keydown", (e) => {
+pagesContainer.addEventListener("keydown", (e) => {
+  const editorElem = e.target.closest('.editor');
+  if (!editorElem) return;
+
   const b = getCurrentBlock();
   if (!b) return;
 
@@ -241,20 +277,32 @@ editor.addEventListener("keydown", (e) => {
     if (n === "scene-heading") {
       setTimeout(() => showToolbarForBlock(nb), 10);
     }
+    setTimeout(() => {
+      const parentEditor = nb.closest('.editor');
+      if (parentEditor) checkPageOverflow(parentEditor);
+    }, 50);
   }
 });
 
-editor.addEventListener("input", () => {
+pagesContainer.addEventListener("input", (e) => {
+  const editorElem = e.target.closest('.editor');
+  if (!editorElem) return;
+
   const b = getCurrentBlock();
   if (b) sanitizeBlockLines(b);
-  editor.querySelectorAll(".script-block").forEach(updatePlaceholderState);
+  editorElem.querySelectorAll(".script-block").forEach(updatePlaceholderState);
   updateAlert();
   updateStats();
   const c = getCurrentBlock();
   if (c) styleSelector.value = c.dataset.style;
+  // Verificar desbordamiento de página
+  setTimeout(() => checkPageOverflow(editorElem), 50);
 });
 
-editor.addEventListener("click", () => {
+pagesContainer.addEventListener("click", (e) => {
+  const editorElem = e.target.closest('.editor');
+  if (!editorElem) return;
+
   const b = getCurrentBlock();
   if (!b) return;
   styleSelector.value = b.dataset.style;
