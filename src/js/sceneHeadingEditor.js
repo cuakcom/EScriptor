@@ -1,67 +1,108 @@
-export function handleSceneHeadingInput(event, block) {
-  if (!event.data || event.data.length === 0) return;
+let toolbar = null;
 
-  const char = event.data[event.data.length - 1].toUpperCase();
-  let replacement = null;
+export function initSceneHeadingToolbar() {
+  toolbar = document.createElement("div");
+  toolbar.className = "scene-heading-toolbar";
+  toolbar.id = "sceneHeadingToolbar";
+  toolbar.innerHTML = `
+    <button type="button" class="sh-btn" data-value="INT.">INT.</button>
+    <button type="button" class="sh-btn" data-value="EXT.">EXT.</button>
+    <button type="button" class="sh-btn" data-value="INT./EXT.">INT./EXT.</button>
+    <span style="width:1px;background:#ccc;margin:2px 3px;"></span>
+    <button type="button" class="sh-btn" data-value=" - DÍA"> - DÍA</button>
+    <button type="button" class="sh-btn" data-value=" - NOCHE"> - NOCHE</button>
+  `;
+  document.body.appendChild(toolbar);
 
-  if (char === 'I') {
-    replacement = 'INT.';
-  } else if (char === 'E') {
-    replacement = 'EXT.';
-  } else if (char === 'D') {
-    replacement = 'DÍA';
-  } else if (char === 'N') {
-    replacement = 'NOCHE';
-  }
+  toolbar.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const btn = e.target.closest(".sh-btn");
+    if (!btn) return;
+    const val = btn.dataset.value;
+    const block = document.querySelector(".script-block[data-style='scene-heading']:focus");
+    if (!block) return;
+    insertSceneValue(block, val);
+  });
 
-  if (!replacement) return;
+  document.addEventListener("selectionchange", updateToolbarState);
+}
 
-  setTimeout(() => {
-    const text = block.textContent;
-    if (!text) return;
+function insertSceneValue(block, value) {
+  const prefixes = ["INT.", "EXT.", "INT./EXT."];
+  const suffixes = [" - DÍA", " - NOCHE"];
+  let text = block.textContent;
 
-    const lastChar = text[text.length - 1].toUpperCase();
-    if (lastChar === char) {
-      const before = text.slice(0, -1);
-      const newText = before + replacement;
-      block.textContent = newText;
-      setCaretPosition(block, newText.length);
+  if (prefixes.includes(value)) {
+    let cleaned = text;
+    for (const p of prefixes) {
+      if (cleaned.startsWith(p)) { cleaned = cleaned.slice(p.length).trimStart(); break; }
     }
-  }, 10);
-}
-
-export function handleSceneHeadingTab(event, block) {
-  event.preventDefault();
-
-  const text = block.textContent;
-  const hasGuion = text.includes('-') || text.includes('–');
-
-  if (!hasGuion) {
-    const insertPos = text.length;
-    block.textContent = text + ' - ';
-    setCaretPosition(block, insertPos + 3);
-  } else {
-    return 'next-style';
+    block.textContent = value + (cleaned ? " " + cleaned : "");
+  } else if (suffixes.includes(value)) {
+    for (const s of suffixes) {
+      if (text.endsWith(s)) { text = text.slice(0, -s.length); break; }
+    }
+    block.textContent = text + value;
   }
+
+  placeCaretAtEnd(block);
+  updateToolbarButtonStates(block);
 }
 
-function setCaretPosition(el, pos) {
-  const range = document.createRange();
+function placeCaretAtEnd(el) {
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  r.collapse(false);
+  const s = window.getSelection();
+  s.removeAllRanges();
+  s.addRange(r);
+}
+
+export function showSceneHeadingToolbar(block) {
+  if (!toolbar) return;
+  const rect = block.getBoundingClientRect();
+  toolbar.style.top = (rect.top + window.scrollY - toolbar.offsetHeight - 4) + "px";
+  toolbar.style.left = rect.left + "px";
+
+  requestAnimationFrame(() => {
+    const rect2 = block.getBoundingClientRect();
+    toolbar.style.top = (rect2.top + window.scrollY - 36) + "px";
+    toolbar.style.left = rect2.left + "px";
+  });
+
+  toolbar.classList.add("visible");
+  updateToolbarButtonStates(block);
+}
+
+export function hideSceneHeadingToolbar() {
+  if (toolbar) toolbar.classList.remove("visible");
+}
+
+function updateToolbarButtonStates(block) {
+  if (!toolbar) return;
+  const text = block.textContent;
+  toolbar.querySelectorAll(".sh-btn").forEach(btn => {
+    const val = btn.dataset.value;
+    const isPrefixBtn = ["INT.", "EXT.", "INT./EXT."].includes(val);
+    const isSuffixBtn = [" - DÍA", " - NOCHE"].includes(val);
+    if (isPrefixBtn) {
+      btn.classList.toggle("active", text.startsWith(val));
+    } else if (isSuffixBtn) {
+      btn.classList.toggle("active", text.endsWith(val));
+    }
+  });
+}
+
+function updateToolbarState() {
   const sel = window.getSelection();
-
-  range.setStart(el.firstChild || el, Math.min(pos, el.textContent.length));
-  range.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-export function getCurrentSceneHeadingInfo(text) {
-  const parts = text.split('-');
-  if (parts.length === 0) return { type: '', location: '', time: '' };
-
-  const type = parts[0]?.trim() || '';
-  const location = parts[1]?.trim() || '';
-  const time = parts[2]?.trim() || '';
-
-  return { type, location, time };
+  if (!sel.rangeCount) { hideSceneHeadingToolbar(); return; }
+  const node = sel.anchorNode;
+  const block = node?.nodeType === Node.TEXT_NODE
+    ? node.parentNode?.closest(".script-block")
+    : node?.closest?.(".script-block");
+  if (block && block.dataset.style === "scene-heading") {
+    showSceneHeadingToolbar(block);
+  } else {
+    hideSceneHeadingToolbar();
+  }
 }
