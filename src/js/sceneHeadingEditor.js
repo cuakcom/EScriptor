@@ -112,3 +112,10 @@ function updateToolbarState() {
     currentBlock = null;
   }
 }
+
+export function showToolbarForBlock(block) {
+  if (block && block.dataset.style === "scene-heading") {
+    currentBlock = block;
+    showSceneHeadingToolbar(block);
+  }
+}
