@@ -5,7 +5,7 @@ import { renderSidebar } from "../components/sidebar.js";
 import { ScriptManager, detectSceneTitle, detectCharacterName } from "./scriptManager.js";
 import { saveScriptLocally, exportToText, exportToPDF } from "./storage.js";
 import { saveToLocalFile, loadFromLocalFile, getRecentFiles, saveToLocalStorage, loadFromLocalStorage } from "./fileManager.js";
-import { handleSceneHeadingInput, handleSceneHeadingTab } from "./sceneHeadingEditor.js";
+import { initSceneHeadingToolbar } from "./sceneHeadingEditor.js";
 
 const app = document.getElementById("app");
 app.className = "app";
@@ -201,18 +201,6 @@ editor.addEventListener("keydown", (e) => {
   const b = getCurrentBlock();
   if (!b) return;
 
-  if (b.dataset.style === "scene-heading") {
-    if (e.key === "Tab") {
-      const result = handleSceneHeadingTab(e, b);
-      if (result === 'next-style') {
-        const n = getStyleCycle(b.dataset.style);
-        applyBlockStyle(b, n);
-        styleSelector.value = n;
-      }
-      return;
-    }
-  }
-
   if (e.key === "Tab") {
     e.preventDefault();
     const n = getStyleCycle(b.dataset.style);
@@ -240,16 +228,9 @@ editor.addEventListener("keydown", (e) => {
   }
 });
 
-editor.addEventListener("input", (e) => {
+editor.addEventListener("input", () => {
   const b = getCurrentBlock();
-  if (b) {
-    sanitizeBlockLines(b);
-    updatePlaceholderState(b);
-
-    if (b.dataset.style === "scene-heading") {
-      handleSceneHeadingInput(e, b);
-    }
-  }
+  if (b) sanitizeBlockLines(b);
   editor.querySelectorAll(".script-block").forEach(updatePlaceholderState);
   updateAlert();
   updateStats();
@@ -263,6 +244,8 @@ editor.addEventListener("click", () => {
   styleSelector.value = b.dataset.style;
   updateAlert();
 });
+
+initSceneHeadingToolbar();
 
 const firstBlock = createBlock("scene-heading");
 editor.append(firstBlock);
