@@ -24,7 +24,7 @@ export function renderCenter() {
         </div>
       </section>
 
-      <section class="page" data-page="1">
+      <section class="page" data-page="1" data-page-number="1.">
         <div id="editor" class="sheet editor" contenteditable="true" spellcheck="false" aria-label="Editor de guión"></div>
       </section>
     </main>
