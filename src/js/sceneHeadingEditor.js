@@ -1,4 +1,5 @@
 let toolbar = null;
+let currentBlock = null;
 
 export function initSceneHeadingToolbar() {
   toolbar = document.createElement("div");
@@ -19,9 +20,8 @@ export function initSceneHeadingToolbar() {
     const btn = e.target.closest(".sh-btn");
     if (!btn) return;
     const val = btn.dataset.value;
-    const block = document.querySelector(".script-block[data-style='scene-heading']:focus");
-    if (!block) return;
-    insertSceneValue(block, val);
+    if (!currentBlock) return;
+    insertSceneValue(currentBlock, val);
   });
 
   document.addEventListener("selectionchange", updateToolbarState);
@@ -95,14 +95,20 @@ function updateToolbarButtonStates(block) {
 
 function updateToolbarState() {
   const sel = window.getSelection();
-  if (!sel.rangeCount) { hideSceneHeadingToolbar(); return; }
+  if (!sel.rangeCount) {
+    hideSceneHeadingToolbar();
+    currentBlock = null;
+    return;
+  }
   const node = sel.anchorNode;
   const block = node?.nodeType === Node.TEXT_NODE
     ? node.parentNode?.closest(".script-block")
     : node?.closest?.(".script-block");
   if (block && block.dataset.style === "scene-heading") {
+    currentBlock = block;
     showSceneHeadingToolbar(block);
   } else {
     hideSceneHeadingToolbar();
+    currentBlock = null;
   }
 }
